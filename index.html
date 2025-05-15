@@ -1,136 +1,181 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>รายการถอนเงิน</title>
-  <style>
-    body {
-      font-family: "Sarabun", sans-serif;
-      background: #f2f3f7;
-      padding: 20px;
-    }
-    #withdraw-list {
-      max-width: 600px;
-      margin: auto;
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    .withdraw-item {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #eee;
-    }
-    .withdraw-item:last-child {
-      border-bottom: none;
-    }
-    .name-phone {
-      font-weight: 600;
-      font-size: 1rem;
-      color: #333;
-      flex: 1 1 220px;
-    }
-    .amount {
-      color: #0a8f08;
-      font-weight: bold;
-      flex: 0 0 100px;
-      text-align: right;
-    }
-    .ref {
-      flex: 1 1 100%;
-      font-size: 0.9rem;
-      color: #888;
-    }
-    .status {
-      margin-top: 5px;
-      font-size: 0.85rem;
-      padding: 5px 10px;
-      border-radius: 12px;
-      font-weight: bold;
-      color: #fff;
-    }
-    .status.working { background-color: #f39c12; }
-    .status.checking { background-color: #3498db; }
-    .status.transfer { background-color: #e67e22; }
-    .status.success { background-color: #27ae60; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>สถานะการถอนเงินสมจริง พร้อมเสียง</title>
+<style>
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: #f0f2f5;
+    padding: 20px;
+    color: #222;
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .transaction {
+    background: #fff;
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.5s ease;
+  }
+  .status {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #e67e22;
+    min-width: 160px;
+    text-align: right;
+    transition: color 0.5s ease;
+  }
+</style>
 </head>
 <body>
 
-<div id="withdraw-list"></div>
+<h2>📋 รายการถอนล่าสุด (สุ่มดีเลย์สถานะ พร้อมเสียง)</h2>
+<div id="transactionList"></div>
+
+<!-- เสียง ding แบบสั้น -->
+<audio id="dingSound" preload="auto">
+  <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg">
+  <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.mp3" type="audio/mpeg">
+</audio>
 
 <script>
-  const names = [
-    "อภิชาติ", "วรพล", "จิรศักดิ์", "อนุชา", "ปฐมพงษ์", "ศราวุธ", "วิทยา", "ธนภัทร", "พงษ์ศักดิ์", "นิติพงษ์",
-    "สุภัทร", "จรัส", "กฤษฎา", "สุวัฒน์", "ปกรณ์", "ทศพล", "อรรถพล", "สมชาย", "กิตติศักดิ์", "ชัยวัฒน์",
-    "นพดล", "ธนกร", "ศุภชัย", "สุนทร", "วิชาญ", "ธวัชชัย", "ปรเมศวร์", "วรพงษ์", "สิทธิชัย", "ชาญชัย",
-    "วรวิทย์", "วัชรพล", "ธีรพล", "ธนกฤต", "สุรชัย", "เกรียงไกร", "พงษ์เทพ", "อาทิตย์", "รณชัย", "สันติ",
-    "ปิยะวัฒน์", "สมพงษ์", "นพรัตน์", "จิรพัฒน์", "จักรกฤษณ์", "วีรภัทร", "ภูริ", "ธีรวัฒน์", "สราวุธ", "ปรัชญา"
+  // รายชื่อจริง 500 ชื่อ (ตัวอย่างชื่อจริงไทยยอดนิยม + สุ่มเติมชื่อแบบ random)
+  const baseNames = [
+    "อานนท์", "ก้อง", "ขวัญ", "คม", "จิตร", "จิรภา", "ชลธิชา", "ชนะ", "ชื่น", "ชูเกียรติ",
+    "ชนินทร์", "ช่อ", "ชไมพร", "ดนัย", "ดาว", "ดารา", "ดาริน", "ดิน", "ธนวัฒน์", "ธนกฤต",
+    "ธนัช", "นที", "น้อย", "นิธิ", "นิจ", "นิ่ม", "นนทิชา", "นที", "บัว", "บุญช่วย",
+    "บุญธรรม", "บูรพา", "ปวีณา", "ปรีชา", "ประภัสสร", "ปริญญา", "ปรียา", "ปฐมพร", "ผกากรอง", "พงศ์",
+    "พชร", "พรทิพย์", "พรพิศ", "พรชัย", "พูนศักดิ์", "ภาคิน", "ภัทร", "ภัทรพล", "มหา", "มณฑล",
+    "มธุรส", "ยศ", "ยุทธ", "ยุพา", "รัตนา", "รัตน์", "รัชนก", "ริน", "รุจิรา", "ฤทธิรงค์",
+    "ลัดดาวรรณ", "ลลิตา", "ลักษณ์", "ลัดดา", "วรรณา", "วัฒนา", "วิทยา", "วิไล", "วิชัย", "วิลาศ",
+    "วริศรา", "วนิดา", "ศักดิ์", "ศรี", "ศุภชัย", "สุดา", "สุวรรณา", "สุทธิพงษ์", "สุรชัย", "สุรัตน์",
+    "สุพัตรา", "สุพิชชา", "สายฝน", "สายรุ้ง", "สมศักดิ์", "สมชาย", "สมปอง", "สมพร", "สมฤดี", "สมหวัง",
+    "สงกรานต์", "สมนึก", "สไมล์", "สาวิตรี", "สุเมธ", "สุภาวดี", "สุทธิชัย", "สุขสันต์", "สุริยา", "สุรีย์"
   ];
 
-  const statuses = [
-    {key:"working", label:"กำลังทำถอน"},
-    {key:"checking", label:"กำลังตรวจสอบ"},
-    {key:"transfer", label:"กำลังโอน"},
-    {key:"success", label:"โอนสำเร็จ"}
-  ];
-
-  function randomAmount() {
-    return Math.floor(Math.random() * 90000) + 1000;
+  // ฟังก์ชันสุ่มชื่อจริงเพิ่มเติมให้ครบ 500 โดยไม่ซ้ำ
+  function generateUniqueNames(count) {
+    const namesSet = new Set(baseNames);
+    const syllables = ["ณ", "พร", "ธ", "ศ", "ยา", "ทิ", "ญา", "นุ", "ษา", "วี", "ภา", "ญา", "ธา", "บู", "ดา", "ปุ", "ริน", "จิ"];
+    while (namesSet.size < count) {
+      let name = "";
+      // สุ่มความยาวชื่อ 2-3 พยางค์ (2-3 ตัวอักษร)
+      const length = Math.floor(Math.random() * 2) + 2;
+      for(let i=0; i<length; i++) {
+        name += syllables[Math.floor(Math.random()*syllables.length)];
+      }
+      namesSet.add(name);
+    }
+    return Array.from(namesSet);
   }
 
-  function randomRef() {
-    return Math.floor(100000 + Math.random() * 900000);
-  }
+  const names = generateUniqueNames(500);
 
   function randomPhone() {
-    const prefixes = ["083", "084", "085", "086", "087", "088", "089"];
-    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-    const middle = "xxx";
-    const last = Math.floor(1000 + Math.random() * 9000);
-    return `${prefix}-${middle}-${last}`;
+    return `083-xxx-${Math.floor(1000 + Math.random()*9000)}`;
   }
 
-  function formatNumber(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  function randomAmount() {
+    return (Math.floor(Math.random() * (50000 - 500)) + 500).toLocaleString() + " บาท";
   }
 
-  const perPage = 10;
-  let startIndex = 0;
-
-  function generateWithdrawList() {
-    const list = document.getElementById("withdraw-list");
-    list.innerHTML = "";
-
-    for (let i = 0; i < perPage; i++) {
-      const idx = (startIndex + i) % names.length;
-      const name = names[idx];
-      const amount = randomAmount();
-      const ref = randomRef();
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const phone = randomPhone();
-
-      const item = document.createElement("div");
-      item.className = "withdraw-item";
-      item.innerHTML = `
-        <div class="name-phone">${name} (${phone})</div>
-        <div class="amount">${formatNumber(amount)} ฿</div>
-        <div class="ref">Ref: #${ref}</div>
-        <div class="status ${status.key}">${status.label}</div>
-      `;
-      list.appendChild(item);
+  // สร้าง transaction 10 รายการต่อรอบ
+  function generateTransactions() {
+    const txs = [];
+    const usedIndices = new Set();
+    while(txs.length < 10) {
+      const idx = Math.floor(Math.random() * names.length);
+      if(!usedIndices.has(idx)) {
+        usedIndices.add(idx);
+        txs.push({
+          name: names[idx],
+          phone: randomPhone(),
+          amount: randomAmount(),
+          statusIndex: 0,
+          timeoutId: null
+        });
+      }
     }
-
-    startIndex = (startIndex + perPage) % names.length;
+    return txs;
   }
 
-  generateWithdrawList();
-  setInterval(generateWithdrawList, 7000);
+  const statuses = [
+    { text: "กำลังตรวจสอบรายการถอน 🔎", color: "#f39c12" },
+    { text: "กำลังทำรายการถอน 💸", color: "#2980b9" },
+    { text: "รายการสำเร็จ ✅", color: "#27ae60" }
+  ];
+
+  const container = document.getElementById('transactionList');
+  const dingSound = document.getElementById('dingSound');
+  let transactions = generateTransactions();
+
+  // แสดงรายการ
+  function render() {
+    container.innerHTML = '';
+    transactions.forEach((tx, idx) => {
+      const div = document.createElement('div');
+      div.className = 'transaction';
+      div.id = `tx-${idx}`;
+      div.innerHTML = `
+        <div>${tx.name} (${tx.phone})<br><small>ยอดถอน: ${tx.amount}</small></div>
+        <div class="status" style="color:${statuses[tx.statusIndex].color}">${statuses[tx.statusIndex].text}</div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  // อัพเดตสถานะ 3-5 วิ
+  function updateStatus(tx, idx) {
+    if(tx.statusIndex >= statuses.length - 1) return; // สถานะสุดท้าย
+
+    const delay = 3000 + Math.floor(Math.random() * 2000);
+
+    tx.timeoutId = setTimeout(() => {
+      tx.statusIndex++;
+      const div = document.getElementById(`tx-${idx}`);
+      if(div) {
+        div.querySelector('.status').textContent = statuses[tx.statusIndex].text;
+        div.querySelector('.status').style.color = statuses[tx.statusIndex].color;
+
+        if(tx.statusIndex === statuses.length - 1) {
+          dingSound.currentTime = 0;
+          dingSound.play().catch(() => {});
+        }
+      }
+      updateStatus(tx, idx);
+    }, delay);
+  }
+
+  // เริ่มรันสถานะทั้งหมด
+  function startCycle() {
+    transactions.forEach((tx, idx) => {
+      tx.statusIndex = 0;
+      updateStatus(tx, idx);
+    });
+  }
+
+  // โหลดรอบใหม่ทุก 12 วินาที
+  function reloadTransactions() {
+    transactions.forEach(tx => {
+      if(tx.timeoutId) clearTimeout(tx.timeoutId);
+    });
+    transactions = generateTransactions();
+    render();
+    startCycle();
+  }
+
+  render();
+  startCycle();
+  setInterval(reloadTransactions, 12000);
 </script>
 
 </body>
