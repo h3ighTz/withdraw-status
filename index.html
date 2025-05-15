@@ -3,52 +3,102 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>สถานะการถอนเงินสมจริง พร้อมเสียง</title>
+<title>รายการถอนเงินแบบสมจริง</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap');
   body {
     font-family: 'Sarabun', sans-serif;
-    background: #f0f2f5;
-    padding: 20px;
+    background: #f9fafb;
+    margin: 0; padding: 20px;
     color: #222;
+    display: flex;
+    justify-content: center;
+  }
+  #container {
+    width: 360px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.07);
+    padding: 20px 15px;
   }
   h2 {
-    text-align: center;
+    font-weight: 600;
+    font-size: 1.3rem;
     margin-bottom: 20px;
+    color: #333;
+    text-align: center;
+    user-select: none;
   }
   .transaction {
-    background: #fff;
-    border-radius: 8px;
-    padding: 12px 20px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: background-color 0.5s ease;
+    background: #fefefe;
+    margin-bottom: 14px;
+    padding: 12px 18px;
+    border-radius: 10px;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.03);
+    transition: background-color 0.4s ease;
+  }
+  .transaction:hover {
+    background-color: #f0f4f8;
+  }
+  .left {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #222;
+    user-select: none;
+  }
+  .left small {
+    display: block;
+    font-weight: 400;
+    color: #666;
+    font-size: 0.85rem;
+    margin-top: 4px;
   }
   .status {
     font-weight: 600;
-    font-size: 1rem;
-    color: #e67e22;
-    min-width: 160px;
+    font-size: 0.95rem;
+    min-width: 180px;
     text-align: right;
-    transition: color 0.5s ease;
+    padding-left: 12px;
+    color: #e67e22;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-feature-settings: "liga", "clig", "calt";
+  }
+  .status.checking {
+    color: #f39c12;
+    animation: pulse 2s infinite ease-in-out;
+  }
+  .status.processing {
+    color: #3498db;
+    animation: pulse 1.8s infinite ease-in-out;
+  }
+  .status.success {
+    color: #27ae60;
+    animation: none;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .icon {
+    font-size: 1.2rem;
   }
 </style>
 </head>
 <body>
 
-<h2>📋 รายการถอนล่าสุด (สุ่มดีเลย์สถานะ พร้อมเสียง)</h2>
-<div id="transactionList"></div>
-
-<!-- เสียง ding แบบสั้น -->
-<audio id="dingSound" preload="auto">
-  <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg">
-  <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.mp3" type="audio/mpeg">
-</audio>
+<div id="container">
+  <h2>💳 รายการถอนเงินล่าสุด</h2>
+  <div id="transactionList"></div>
+</div>
 
 <script>
-  // รายชื่อจริง 500 ชื่อ (ตัวอย่างชื่อจริงไทยยอดนิยม + สุ่มเติมชื่อแบบ random)
+  // รายชื่อจริง 500 ชื่อ (เหมือนเดิม)
   const baseNames = [
     "อานนท์", "ก้อง", "ขวัญ", "คม", "จิตร", "จิรภา", "ชลธิชา", "ชนะ", "ชื่น", "ชูเกียรติ",
     "ชนินทร์", "ช่อ", "ชไมพร", "ดนัย", "ดาว", "ดารา", "ดาริน", "ดิน", "ธนวัฒน์", "ธนกฤต",
@@ -62,13 +112,11 @@
     "สงกรานต์", "สมนึก", "สไมล์", "สาวิตรี", "สุเมธ", "สุภาวดี", "สุทธิชัย", "สุขสันต์", "สุริยา", "สุรีย์"
   ];
 
-  // ฟังก์ชันสุ่มชื่อจริงเพิ่มเติมให้ครบ 500 โดยไม่ซ้ำ
   function generateUniqueNames(count) {
     const namesSet = new Set(baseNames);
     const syllables = ["ณ", "พร", "ธ", "ศ", "ยา", "ทิ", "ญา", "นุ", "ษา", "วี", "ภา", "ญา", "ธา", "บู", "ดา", "ปุ", "ริน", "จิ"];
     while (namesSet.size < count) {
       let name = "";
-      // สุ่มความยาวชื่อ 2-3 พยางค์ (2-3 ตัวอักษร)
       const length = Math.floor(Math.random() * 2) + 2;
       for(let i=0; i<length; i++) {
         name += syllables[Math.floor(Math.random()*syllables.length)];
@@ -88,7 +136,6 @@
     return (Math.floor(Math.random() * (50000 - 500)) + 500).toLocaleString() + " บาท";
   }
 
-  // สร้าง transaction 10 รายการต่อรอบ
   function generateTransactions() {
     const txs = [];
     const usedIndices = new Set();
@@ -109,16 +156,15 @@
   }
 
   const statuses = [
-    { text: "กำลังตรวจสอบรายการถอน 🔎", color: "#f39c12" },
-    { text: "กำลังทำรายการถอน 💸", color: "#2980b9" },
-    { text: "รายการสำเร็จ ✅", color: "#27ae60" }
+    { text: "กำลังตรวจสอบรายการถอน", color: "#f39c12", icon: "🔎", className: "checking" },
+    { text: "กำลังทำรายการถอน", color: "#3498db", icon: "💸", className: "processing" },
+    { text: "รายการสำเร็จ", color: "#27ae60", icon: "✅", className: "success" }
   ];
 
   const container = document.getElementById('transactionList');
-  const dingSound = document.getElementById('dingSound');
+
   let transactions = generateTransactions();
 
-  // แสดงรายการ
   function render() {
     container.innerHTML = '';
     transactions.forEach((tx, idx) => {
@@ -126,57 +172,47 @@
       div.className = 'transaction';
       div.id = `tx-${idx}`;
       div.innerHTML = `
-        <div>${tx.name} (${tx.phone})<br><small>ยอดถอน: ${tx.amount}</small></div>
-        <div class="status" style="color:${statuses[tx.statusIndex].color}">${statuses[tx.statusIndex].text}</div>
+        <div class="left">
+          ${tx.name} (${tx.phone})<br><small>ยอดถอน: ${tx.amount}</small>
+        </div>
+        <div class="status ${statuses[tx.statusIndex].className}" style="color:${statuses[tx.statusIndex].color}">
+          <span class="icon">${statuses[tx.statusIndex].icon}</span> ${statuses[tx.statusIndex].text}
+        </div>
       `;
       container.appendChild(div);
     });
   }
 
-  // อัพเดตสถานะ 3-5 วิ
   function updateStatus(tx, idx) {
-    if(tx.statusIndex >= statuses.length - 1) return; // สถานะสุดท้าย
+    if(tx.statusIndex >= statuses.length - 1) return;
 
+    // สุ่มเวลา 3-5 วินาที
     const delay = 3000 + Math.floor(Math.random() * 2000);
 
     tx.timeoutId = setTimeout(() => {
       tx.statusIndex++;
       const div = document.getElementById(`tx-${idx}`);
       if(div) {
-        div.querySelector('.status').textContent = statuses[tx.statusIndex].text;
+        div.querySelector('.status').textContent = '';
+        div.querySelector('.status').className = 'status ' + statuses[tx.statusIndex].className;
         div.querySelector('.status').style.color = statuses[tx.statusIndex].color;
+        div.querySelector('.status').innerHTML = `<span class="icon">${statuses[tx.statusIndex].icon}</span> ${statuses[tx.statusIndex].text}`;
+}
+updateStatus(tx, idx);
+}, delay);
+}
 
-        if(tx.statusIndex === statuses.length - 1) {
-          dingSound.currentTime = 0;
-          dingSound.play().catch(() => {});
-        }
-      }
-      updateStatus(tx, idx);
-    }, delay);
-  }
+function start() {
+render();
+transactions.forEach((tx, idx) => updateStatus(tx, idx));
+}
 
-  // เริ่มรันสถานะทั้งหมด
-  function startCycle() {
-    transactions.forEach((tx, idx) => {
-      tx.statusIndex = 0;
-      updateStatus(tx, idx);
-    });
-  }
-
-  // โหลดรอบใหม่ทุก 12 วินาที
-  function reloadTransactions() {
-    transactions.forEach(tx => {
-      if(tx.timeoutId) clearTimeout(tx.timeoutId);
-    });
-    transactions = generateTransactions();
-    render();
-    startCycle();
-  }
-
-  render();
-  startCycle();
-  setInterval(reloadTransactions, 12000);
+start();
+setInterval(() => {
+transactions.forEach(t => clearTimeout(t.timeoutId));
+transactions = generateTransactions();
+start();
+}, 12000);
 </script>
 
-</body>
-</html>
+</body> </html> ```
