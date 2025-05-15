@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>รายการถอนเงิน</title>
+  <style>
+    body {
+      font-family: "Sarabun", sans-serif;
+      background: #f2f3f7;
+      padding: 20px;
+    }
+    #withdraw-list {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .withdraw-item {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .withdraw-item:last-child {
+      border-bottom: none;
+    }
+    .name-phone {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #333;
+      flex: 1 1 220px;
+    }
+    .amount {
+      color: #0a8f08;
+      font-weight: bold;
+      flex: 0 0 100px;
+      text-align: right;
+    }
+    .ref {
+      flex: 1 1 100%;
+      font-size: 0.9rem;
+      color: #888;
+    }
+    .status {
+      margin-top: 5px;
+      font-size: 0.85rem;
+      padding: 5px 10px;
+      border-radius: 12px;
+      font-weight: bold;
+      color: #fff;
+    }
+    .status.working { background-color: #f39c12; }
+    .status.checking { background-color: #3498db; }
+    .status.transfer { background-color: #e67e22; }
+    .status.success { background-color: #27ae60; }
+  </style>
+</head>
+<body>
+
+<div id="withdraw-list"></div>
+
+<script>
+  const names = [
+    "อภิชาติ", "วรพล", "จิรศักดิ์", "อนุชา", "ปฐมพงษ์", "ศราวุธ", "วิทยา", "ธนภัทร", "พงษ์ศักดิ์", "นิติพงษ์",
+    "สุภัทร", "จรัส", "กฤษฎา", "สุวัฒน์", "ปกรณ์", "ทศพล", "อรรถพล", "สมชาย", "กิตติศักดิ์", "ชัยวัฒน์",
+    "นพดล", "ธนกร", "ศุภชัย", "สุนทร", "วิชาญ", "ธวัชชัย", "ปรเมศวร์", "วรพงษ์", "สิทธิชัย", "ชาญชัย",
+    "วรวิทย์", "วัชรพล", "ธีรพล", "ธนกฤต", "สุรชัย", "เกรียงไกร", "พงษ์เทพ", "อาทิตย์", "รณชัย", "สันติ",
+    "ปิยะวัฒน์", "สมพงษ์", "นพรัตน์", "จิรพัฒน์", "จักรกฤษณ์", "วีรภัทร", "ภูริ", "ธีรวัฒน์", "สราวุธ", "ปรัชญา"
+  ];
+
+  const statuses = [
+    {key:"working", label:"กำลังทำถอน"},
+    {key:"checking", label:"กำลังตรวจสอบ"},
+    {key:"transfer", label:"กำลังโอน"},
+    {key:"success", label:"โอนสำเร็จ"}
+  ];
+
+  function randomAmount() {
+    return Math.floor(Math.random() * 90000) + 1000;
+  }
+
+  function randomRef() {
+    return Math.floor(100000 + Math.random() * 900000);
+  }
+
+  function randomPhone() {
+    const prefixes = ["083", "084", "085", "086", "087", "088", "089"];
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const middle = "xxx";
+    const last = Math.floor(1000 + Math.random() * 9000);
+    return `${prefix}-${middle}-${last}`;
+  }
+
+  function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  const perPage = 10;
+  let startIndex = 0;
+
+  function generateWithdrawList() {
+    const list = document.getElementById("withdraw-list");
+    list.innerHTML = "";
+
+    for (let i = 0; i < perPage; i++) {
+      const idx = (startIndex + i) % names.length;
+      const name = names[idx];
+      const amount = randomAmount();
+      const ref = randomRef();
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const phone = randomPhone();
+
+      const item = document.createElement("div");
+      item.className = "withdraw-item";
+      item.innerHTML = `
+        <div class="name-phone">${name} (${phone})</div>
+        <div class="amount">${formatNumber(amount)} ฿</div>
+        <div class="ref">Ref: #${ref}</div>
+        <div class="status ${status.key}">${status.label}</div>
+      `;
+      list.appendChild(item);
+    }
+
+    startIndex = (startIndex + perPage) % names.length;
+  }
+
+  generateWithdrawList();
+  setInterval(generateWithdrawList, 7000);
+</script>
+
+</body>
+</html>
